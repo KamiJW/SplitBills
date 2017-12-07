@@ -72,6 +72,9 @@ import java.util.Map;
  * The app expects users to authenticate with Google ID. It also sends user
  * activity logs to a Servlet instance through Firebase.
  */
+
+//Hi
+
 public class PlayActivity
         extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
