@@ -1,35 +1,27 @@
 {
   "project_info": {
-    "project_number": "883654425652",
-    "firebase_url": "https://playchat-3bd35.firebaseio.com",
-    "project_id": "playchat-3bd35",
-    "storage_bucket": "playchat-3bd35.appspot.com"
+    "project_number": "902240430860",
+    "firebase_url": "https://splitbills-47853.firebaseio.com",
+    "project_id": "splitbills-47853",
+    "storage_bucket": "splitbills-47853.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:883654425652:android:cd56371d7d800b22",
+        "mobilesdk_app_id": "1:902240430860:android:cd56371d7d800b22",
         "android_client_info": {
           "package_name": "com.google.cloud.solutions.flexenv"
         }
       },
       "oauth_client": [
         {
-          "client_id": "883654425652-8spmuj8junsmg8bk6u1974jgokntgt8v.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.google.cloud.solutions.flexenv",
-            "certificate_hash": "78f0e3130de9687a14f98d5c61d76f9ca173e18f"
-          }
-        },
-        {
-          "client_id": "883654425652-d01um8bqbtomkqc7j1d9arhibskv7hvp.apps.googleusercontent.com",
+          "client_id": "902240430860-oalv9tj4o7pchmkc7s1s2g0f3a50v6ro.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBA67GS79wyNoYnrgQsDP-FRua_OFqKTow"
+          "current_key": "AIzaSyDx8rPBxKVs9QCcA1LZ5SJqOPz1krZDbMA"
         }
       ],
       "services": {
@@ -37,13 +29,8 @@
           "status": 1
         },
         "appinvite_service": {
-          "status": 2,
-          "other_platform_oauth_client": [
-            {
-              "client_id": "883654425652-d01um8bqbtomkqc7j1d9arhibskv7hvp.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "status": 1,
+          "other_platform_oauth_client": []
         },
         "ads_service": {
           "status": 2
