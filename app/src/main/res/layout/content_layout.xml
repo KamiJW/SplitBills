@@ -14,7 +14,7 @@
 
 
     <ImageView
-        android:id="@+id/userid"
+        android:id="@+id/userphoto"
         android:layout_width="140dp"
         android:layout_height="140dp"
         android:layout_gravity="center"
@@ -28,7 +28,7 @@
          >
 
         <Button
-            android:id="@+id/button1"
+            android:id="@+id/pay"
             android:layout_width="90dp"
             android:layout_height="40dp"
             android:text="PAY"
@@ -36,7 +36,7 @@
             />
 
         <Button
-            android:id="@+id/button2"
+            android:id="@+id/request"
             android:layout_width="90dp"
             android:layout_height="40dp"
             android:text="REQUEST" />
@@ -48,14 +48,26 @@
         android:layout_height="1dp"
         android:layout_marginTop="15dp"
         android:background="@android:color/background_dark"></View>
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <View android:layout_width="2dp"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#000"/>
-</LinearLayout>
+        android:divider="@drawable/one"
+        android:dividerPadding="10dp"
+        android:showDividers="middle">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="test1"
+            />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="test2"
+            />
 
+    </LinearLayout>
 </LinearLayout>
