@@ -24,6 +24,7 @@ public abstract class Transaction {
         this.dividedAmount = dividedAmount;
         this.title = title;
         this.use = use;
+        this.dateCreated = new Date();
         this.isSolved = false;
         for(Account a: involved){
             a.addTrans(this);
