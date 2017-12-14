@@ -12,4 +12,15 @@
     <string name="message_hint">Enter a message</string>
 
     <string name="channels">books,game,music,sports,travel</string>
+    <string name="purpose">Choose your purpose</string>
+    <string-array name="purpose_array">
+        <item>Water</item>
+        <item>Gas</item>
+        <item>Electricity</item>
+        <item>other</item>
+    </string-array>
+    <string-array name="p_r">
+        <item>Pay</item>
+        <item>Request</item>
+    </string-array>
 </resources>
