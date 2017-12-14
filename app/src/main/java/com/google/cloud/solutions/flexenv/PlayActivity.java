@@ -16,7 +16,11 @@
 package com.google.cloud.solutions.flexenv;
 //Xy
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -31,6 +35,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
@@ -58,7 +63,11 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.squareup.picasso.Picasso;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -77,14 +86,15 @@ import java.util.Map;
 
 public class PlayActivity
         extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener,
+        //implements NavigationView.OnNavigationItemSelectedListener,
+        implements
         GoogleApiClient.OnConnectionFailedListener,
-        View.OnKeyListener,
+        //View.OnKeyListener,
         View.OnClickListener {
 
     // Firebase keys commonly used with backend Servlet instances
     private static final String IBX = "inbox";
-    private static final String CHS = "channels";
+    //private static final String CHS = "channels";
     private static final String REQLOG = "requestLogger";
 
     private static final int RC_SIGN_IN = 9001;
@@ -99,24 +109,32 @@ public class PlayActivity
     private FirebaseAuth.AuthStateListener authListener;
     private String token;
     private String inbox;
-    private String currentChannel;
-    private List<String> channels;
-    private ChildEventListener channelListener;
+    //private String currentChannel;
+    //private List<String> channels;
+    //private ChildEventListener channelListener;
     private SimpleDateFormat fmt;
 
-    private Menu channelMenu;
-    private TextView channelLabel;
-    private ListView messageHistory;
+    //private Menu channelMenu;
+    //private TextView channelLabel;
+    //private ListView messageHistory;
     private List<Map<String, String>> messages;
     private SimpleAdapter messageAdapter;
-    private EditText messageText;
+    //private EditText messageText;
     private TextView status;
+
+    //private Account acc;
+    private String cuser;
+    private List<String> friends;
+    private List<String> transactions;
+    private String userEmail;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_play);
+        //setContentView(R.layout.content_play);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -127,10 +145,10 @@ public class PlayActivity
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        channelMenu = navigationView.getMenu();
-        navigationView.setNavigationItemSelectedListener(this);
-        initChannels(getResources().getString(R.string.channels));
+//        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+//        channelMenu = navigationView.getMenu();
+//        navigationView.setNavigationItemSelectedListener(this);
+//        initChannels(getResources().getString(R.string.channels));
 
         GoogleSignInOptions gso =
                 new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -142,52 +160,57 @@ public class PlayActivity
                 .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
                 .build();
         auth = FirebaseAuth.getInstance();
-        authListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
-                    inbox = "client-" + Integer.toString(Math.abs(user.getUid().hashCode()));
-                    Log.d(TAG, "onAuthStateChanged:signed_in:" + inbox);
-                    status.setText("Signin as " + user.getDisplayName());
-                    updateUI(true);
-                } else {
-                    Log.d(TAG, "onAuthStateChanged:signed_out");
-                    updateUI(false);
-                }
-            }
-        };
+
+//        authListener = new FirebaseAuth.AuthStateListener() {
+//            @Override
+//            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+//                FirebaseUser user = firebaseAuth.getCurrentUser();
+//                if (user != null) {
+//                    inbox = "client-" + Integer.toString(Math.abs(user.getUid().hashCode()));
+//                    Log.d(TAG, "onAuthStateChanged:signed_in:" + inbox);
+//                    status.setText("Signin as " + user.getDisplayName());
+//                    updateUI(true);
+//                } else {
+//                    Log.d(TAG, "onAuthStateChanged:signed_out");
+//                    updateUI(false);
+//                }
+//            }
+//        };
         SignInButton signInButton = (SignInButton) findViewById(R.id.sign_in_button);
         signInButton.setSize(SignInButton.SIZE_STANDARD);
         signInButton.setScopes(gso.getScopeArray());
         signInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
                 // Start authenticating with Google ID first.
                 startActivityForResult(signInIntent, RC_SIGN_IN);
             }
         });
-        channelLabel = (TextView) findViewById(R.id.channelLabel);
         Button signOutButton = (Button) findViewById(R.id.sign_out_button);
         signOutButton.setOnClickListener(this);
+
 
         messages = new ArrayList<Map<String, String>>();
         messageAdapter = new SimpleAdapter(this, messages, android.R.layout.simple_list_item_2,
                 new String[]{"message", "meta"}, new int[]{android.R.id.text1, android.R.id.text2});
-        messageHistory = (ListView) findViewById(R.id.messageHistory);
-        messageHistory.setAdapter(messageAdapter);
-        messageText = (EditText) findViewById(R.id.messageText);
-        messageText.setOnKeyListener(this);
+        //messageHistory = (ListView) findViewById(R.id.messageHistory);
+        //messageHistory.setAdapter(messageAdapter);
+        //messageText = (EditText) findViewById(R.id.messageText);
+        //messageText.setOnKeyListener(this);
         fmt = new SimpleDateFormat("yy.MM.dd HH:mm z");
 
         status = (TextView) findViewById(R.id.status);
+
+        updateUI(false);
+        initFirebase();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        auth.addAuthStateListener(authListener);
+        //auth.addAuthStateListener(authListener);
     }
 
     @Override
@@ -202,6 +225,7 @@ public class PlayActivity
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_SIGN_IN) {
+
             GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
             Log.d(TAG, "SignInResult : " + result.isSuccess());
             // If Google ID authentication is succeeded, obtain a token for Firebase authentication.
@@ -220,7 +244,13 @@ public class PlayActivity
                                 }
                                 else {
                                     firebase = FirebaseDatabase.getInstance().getReference();
-                                    requestLogger();
+                                    String email = auth.getCurrentUser().getEmail();
+                                    userEmail = email;
+                                    Uri photo = auth.getCurrentUser().getPhotoUrl();
+                                    ((TextView)findViewById(R.id.channelLabel)).setText(email);
+                                    Picasso.with(PlayActivity.this).load(photo).into((ImageView)findViewById(R.id.photo));
+                                    //requestLogger();
+                                    initializeFriendlist();
                                     updateUI(true);
                                 }
                             }
@@ -243,7 +273,10 @@ public class PlayActivity
                 new ResultCallback<Status>() {
                     @Override
                     public void onResult(Status status) {
-                        firebase.removeEventListener(channelListener);
+                        //firebase.removeEventListener(channelListener);
+                        if(fbLog == null){
+                            return;
+                        }
                         fbLog.log(inbox, "Signed out");
                         firebase.onDisconnect();
                         token = inbox = null;
@@ -253,84 +286,170 @@ public class PlayActivity
         updateUI(false);
     }
 
-    @Override
-    public boolean onKey(View v, int keyCode, KeyEvent event) {
-        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-            firebase.child(CHS + "/" + currentChannel)
-                    .push()
-                    .setValue(new Message(messageText.getText().toString(), acct.getDisplayName()));
-            return true;
+    public void toTestActivity(View v){
+
+        firebase.child("user").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (snapshot.hasChild("name")) {
+                    Log.d("fk","Yes");
+                }else{
+                    Log.d("fk","No");
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                System.out.println("The read failed: " + databaseError.getCode());
+            }
+        });
+
+    }
+
+    private void initializeFriendlist(){
+        firebase.child("user").child(filterEmail(userEmail)).child("Friends").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                friends = new ArrayList<String>();
+                for(DataSnapshot dsp : dataSnapshot.getChildren()){
+                    friends.add(dsp.getKey());
+                }
+                String display = friends.toString();
+                ((TextView)findViewById(R.id.text2)).setText(display);
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                System.out.println("The read failed: " + databaseError.getCode());
+            }
+        });
+
+    }
+
+    private void initializeTransactions(){
+        firebase.child("user").child(filterEmail(userEmail)).child("Transactions").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                //Post post = dataSnapshot.getValue(Post.class);
+                //((TextView)findViewById(R.id.text2)).setText(dataSnapshot.getChildrenCount()+"");
+                transactions = new ArrayList<String>();
+                for(DataSnapshot dsp : dataSnapshot.getChildren()){
+                    //ke neng yao list
+                    transactions.add(dsp.getKey());
+                }
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                System.out.println("The read failed: " + databaseError.getCode());
+            }
+        });
+    }
+
+
+
+    public void addFriend(View v){
+        String friend = ((EditText)findViewById(R.id.text1)).getText().toString();
+        //firebase.child("user/friends").setValue(friend);
+        String userEmailPath = filterEmail(userEmail);
+        firebase.child("user").child(userEmailPath).child("Friends").child(friend).setValue(friend);
+        firebase.child("userlist").getRef();
+    }
+
+    private String filterEmail(String Email){
+        String path = "";
+        for(int i = 0;i<Email.length();i++){
+            if(Email.charAt(i) != '.'){
+                path += Email.charAt(i);
+            }
         }
-        return false;
+        return path;
     }
 
-    private void addMessage(String msgString, String meta) {
-        Map<String, String> message = new HashMap<String, String>();
-        message.put("message", msgString);
-        message.put("meta", meta);
-        messages.add(message);
+    private void getTransaction(){
 
-        messageAdapter.notifyDataSetChanged();
-        messageText.setText("");
     }
+
+
+//    @Override
+//    public boolean onKey(View v, int keyCode, KeyEvent event) {
+//        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+//            firebase.child(CHS + "/" + currentChannel)
+//                    .push()
+//                    .setValue(new Message(messageText.getText().toString(), acct.getDisplayName()));
+//            return true;
+//        }
+//        return false;
+//    }
+
+//    private void addMessage(String msgString, String meta) {
+//        Map<String, String> message = new HashMap<String, String>();
+//        message.put("message", msgString);
+//        message.put("meta", meta);
+//        messages.add(message);
+//
+//        messageAdapter.notifyDataSetChanged();
+//        messageText.setText("");
+//    }
 
     private void updateUI(boolean signedIn) {
         if (signedIn) {
             findViewById(R.id.sign_in_button).setVisibility(View.GONE);
             findViewById(R.id.sign_out_button).setVisibility(View.VISIBLE);
-            findViewById(R.id.channelLabel).setVisibility(View.VISIBLE);
-            findViewById(R.id.messageText).setVisibility(View.VISIBLE);
-            findViewById(R.id.messageHistory).setVisibility(View.VISIBLE);
+            //findViewById(R.id.channelLabel).setVisibility(View.VISIBLE);
+            //findViewById(R.id.messageText).setVisibility(View.VISIBLE);
+            //findViewById(R.id.messageHistory).setVisibility(View.VISIBLE);
         }
         else {
             findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
             findViewById(R.id.sign_out_button).setVisibility(View.GONE);
-            findViewById(R.id.channelLabel).setVisibility(View.INVISIBLE);
-            findViewById(R.id.messageText).setVisibility(View.INVISIBLE);
-            findViewById(R.id.messageHistory).setVisibility(View.INVISIBLE);
+            //findViewById(R.id.channelLabel).setVisibility(View.INVISIBLE);
+            //findViewById(R.id.messageText).setVisibility(View.INVISIBLE);
+            //findViewById(R.id.messageHistory).setVisibility(View.INVISIBLE);
             ((TextView)findViewById(R.id.status)).setText("");
         }
     }
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
+//        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+//        if (drawer.isDrawerOpen(GravityCompat.START)) {
+//            drawer.closeDrawer(GravityCompat.START);
+//        } else {
+//            super.onBackPressed();
+//        }
     }
 
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        messages.clear();
-
-        String msg = "Switching channel to '" + item.toString() + "'";
-        try {
-            fbLog.log(inbox, msg);
-        } catch(NullPointerException e) {
-            updateUI(false);
-            return false;
-        }
-
-        // Switching a listener to the selected channel.
-        firebase.child(CHS + "/" + currentChannel).removeEventListener(channelListener);
-        currentChannel = item.toString();
-        firebase.child(CHS + "/" + currentChannel).addChildEventListener(channelListener);
-
-        channelLabel.setText(currentChannel);
-
-        return true;
-    }
+//    @Override
+//    public boolean onNavigationItemSelected(MenuItem item) {
+//        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+//        drawer.closeDrawer(GravityCompat.START);
+//        messages.clear();
+//
+//        String msg = "Switching channel to '" + item.toString() + "'";
+//        try {
+//            fbLog.log(inbox, msg);
+//        } catch(NullPointerException e) {
+//            updateUI(false);
+//            return false;
+//        }
+//
+//        // Switching a listener to the selected channel.
+//        firebase.child(CHS + "/" + currentChannel).removeEventListener(channelListener);
+//        currentChannel = item.toString();
+//        firebase.child(CHS + "/" + currentChannel).addChildEventListener(channelListener);
+//
+//        channelLabel.setText(currentChannel);
+//
+//        return true;
+//    }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {}
 
     private void initFirebase() {
-        channels = new ArrayList<String>();
+        //channels = new ArrayList<String>();
         firebase = FirebaseDatabase.getInstance().getReference();
     }
 
@@ -338,25 +457,28 @@ public class PlayActivity
     /*
      * Request that a Servlet instance be assigned.
      */
-    private void requestLogger() {
-        firebase.child(IBX + "/" + inbox).removeValue();
-        firebase.child(IBX + "/" + inbox).addValueEventListener(new ValueEventListener() {
-            public void onDataChange(DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    fbLog = new FirebaseLogger(firebase, IBX + "/" + snapshot.getValue().toString()
-                            + "/logs");
-                    firebase.child(IBX + "/" + inbox).removeEventListener(this);
-                    fbLog.log(inbox, "Signed in");
-                }
-            }
-
-            public void onCancelled(DatabaseError error) {
-                Log.e(TAG, error.getDetails());
-            }
-        });
-
-        firebase.child(REQLOG).push().setValue(inbox);
-    }
+//    private void requestLogger() {
+//        firebase.child(IBX + "/" + inbox).removeValue();
+//        firebase.child(IBX + "/" + inbox).addValueEventListener(new ValueEventListener() {
+//            public void onDataChange(DataSnapshot snapshot) {
+//                if (snapshot.exists()) {
+//                    fbLog = new FirebaseLogger(firebase, IBX + "/" + snapshot.getValue().toString()
+//                            + "/logs");
+//                    firebase.child(IBX + "/" + inbox).removeEventListener(this);
+//                    fbLog.log(inbox, "Signed in");
+//
+//                    //sjw request friend list
+//                    //friends
+//                }
+//            }
+//
+//            public void onCancelled(DatabaseError error) {
+//                Log.e(TAG, error.getDetails());
+//            }
+//        });
+//
+//        firebase.child(REQLOG).push().setValue(inbox);
+//    }
 // [END requestLogger]
 
     /*
@@ -364,37 +486,37 @@ public class PlayActivity
      * Once a channel is selected, ChildEventListener is attached and
      * waits for messages.
      */
-    private void initChannels(String channelString) {
-        Log.d(TAG, "Channels : " + channelString);
-        channels = new ArrayList<String>();
-        String[] topicArr = channelString.split(",");
-        for (int i = 0; i < topicArr.length; i++) {
-            channels.add(i, topicArr[i]);
-            channelMenu.add(topicArr[i]);
-        }
-
-        channelListener = new ChildEventListener() {
-            @Override
-            public void onChildAdded(DataSnapshot snapshot, String prevKey) {
-                Message message = (Message) snapshot.getValue(Message.class);
-                // Extract attributes from Message object to display on the screen.
-                addMessage(message.getText(), fmt.format(new Date(message.getTimeLong())) + " "
-                        + message.getDisplayName());
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-                Log.e(TAG, error.getDetails());
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot snapshot, String prevKey) {}
-
-            @Override
-            public void onChildRemoved(DataSnapshot snapshot) {}
-
-            @Override
-            public void onChildMoved(DataSnapshot snapshot, String prevKey) {}
-        };
-    }
+//    private void initChannels(String channelString) {
+//        Log.d(TAG, "Channels : " + channelString);
+//        channels = new ArrayList<String>();
+//        String[] topicArr = channelString.split(",");
+//        for (int i = 0; i < topicArr.length; i++) {
+//            channels.add(i, topicArr[i]);
+//            channelMenu.add(topicArr[i]);
+//        }
+//
+//        channelListener = new ChildEventListener() {
+//            @Override
+//            public void onChildAdded(DataSnapshot snapshot, String prevKey) {
+//                Message message = (Message) snapshot.getValue(Message.class);
+//                // Extract attributes from Message object to display on the screen.
+//                addMessage(message.getText(), fmt.format(new Date(message.getTimeLong())) + " "
+//                        + message.getDisplayName());
+//            }
+//
+//            @Override
+//            public void onCancelled(DatabaseError error) {
+//                Log.e(TAG, error.getDetails());
+//            }
+//
+//            @Override
+//            public void onChildChanged(DataSnapshot snapshot, String prevKey) {}
+//
+//            @Override
+//            public void onChildRemoved(DataSnapshot snapshot) {}
+//
+//            @Override
+//            public void onChildMoved(DataSnapshot snapshot, String prevKey) {}
+//        };
+//    }
 }

@@ -39,10 +39,10 @@
 
             <TextView
                 android:id="@+id/channelLabel"
-                android:layout_width="265dp"
+                android:layout_width="250dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:text="@string/channel_label"
+                android:text="Channel"
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 android:visibility="visible" />
 
@@ -56,26 +56,61 @@
 
         </LinearLayout>
 
-        <ListView
-            android:id="@+id/messageHistory"
-            android:layout_width="match_parent"
-            android:layout_height="358dp"
-            android:layout_gravity="center_horizontal"
-            android:fastScrollAlwaysVisible="true"
-            android:fastScrollEnabled="true"
-            android:transcriptMode="normal"
-            android:visibility="invisible"
-            tools:listitem="@android:layout/simple_list_item_2" />
+        <ImageView
+            android:id="@+id/photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
 
         <EditText
-            android:id="@+id/messageText"
-            android:layout_width="match_parent"
+            android:id="@+id/text1"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="#66df7e"
-            android:hint="@string/message_hint"
-            android:padding="1dp"
-            android:singleLine="true"
-            android:visibility="invisible" />
+            android:text="add"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="add"
+            android:onClick="addFriend"/>
+
+        <!--<Button-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="get"-->
+            <!--android:onClick="getFriends"/>-->
+
+        <TextView
+            android:id="@+id/text2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="get"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="test"
+            android:onClick="toTestActivity"/>
+
+        <!--<ListView-->
+            <!--android:id="@+id/messageHistory"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="358dp"-->
+            <!--android:layout_gravity="center_horizontal"-->
+            <!--android:fastScrollAlwaysVisible="true"-->
+            <!--android:fastScrollEnabled="true"-->
+            <!--android:transcriptMode="normal"-->
+            <!--android:visibility="invisible"-->
+            <!--tools:listitem="@android:layout/simple_list_item_2" />-->
+
+        <!--<EditText-->
+            <!--android:id="@+id/messageText"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:background="#66df7e"-->
+            <!--android:hint="@string/message_hint"-->
+            <!--android:padding="1dp"-->
+            <!--android:singleLine="true"-->
+            <!--android:visibility="invisible" />-->
 
         <TextView
             android:id="@+id/status"
