@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Please input your costs for all utilities"
+        android:textSize="20dp"
+        android:layout_marginTop="20dp"/>
+
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="WATER COST:"
+        android:layout_gravity="center"
+        android:layout_marginTop="50dp"/>
+    <EditText
+        android:layout_width="200dp"
+        android:layout_height="35dp"
+        android:layout_gravity="center"
+        android:id="@+id/watercost"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ELECTRICITY COST:"
+        android:layout_gravity="center"
+        android:layout_marginTop="40dp"/>
+    <EditText
+        android:layout_width="200dp"
+        android:layout_height="35dp"
+        android:layout_gravity="center"
+        android:id="@+id/electricitycost"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GAS COST:"
+        android:layout_gravity="center"
+        android:layout_marginTop="40dp"/>
+    <EditText
+        android:layout_width="200dp"
+        android:layout_height="35dp"
+        android:layout_gravity="center"
+        android:id="@+id/gascost"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="RENT COST:"
+        android:layout_gravity="center"
+        android:layout_marginTop="40dp"/>
+    <EditText
+        android:layout_width="200dp"
+        android:layout_height="35dp"
+        android:layout_gravity="center"
+        android:id="@+id/rentcost"/>
+    <Button
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:text="DONE"
+        android:id="@+id/finish_setting"/>
+
+
+
+</LinearLayout>
