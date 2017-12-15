@@ -27,12 +27,15 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -51,6 +54,7 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.cloud.solutions.flexenv.common.Friend;
 import com.google.cloud.solutions.flexenv.common.Message;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
@@ -65,8 +69,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -84,6 +90,7 @@ import java.util.Map;
 
 //Hi
 
+
 public class PlayActivity
         extends AppCompatActivity
         //implements NavigationView.OnNavigationItemSelectedListener,
@@ -91,6 +98,7 @@ public class PlayActivity
         GoogleApiClient.OnConnectionFailedListener,
         //View.OnKeyListener,
         View.OnClickListener {
+    public static PlayActivity instance = null;
 
     // Firebase keys commonly used with backend Servlet instances
     private static final String IBX = "inbox";
@@ -125,14 +133,17 @@ public class PlayActivity
     //private Account acc;
     private String cuser;
     private List<String> friends;
+    private List<String> debts;
+    private List<String> photoUris;
     private List<String> transactions;
     private String userEmail;
+    private String photoUri;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        instance = this;
         setContentView(R.layout.activity_play);
         //setContentView(R.layout.content_play);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -247,7 +258,12 @@ public class PlayActivity
                                     String email = auth.getCurrentUser().getEmail();
                                     userEmail = email;
                                     Uri photo = auth.getCurrentUser().getPhotoUrl();
+                                    photoUri = photo.toString();
                                     Picasso.with(PlayActivity.this).load(photo).into((ImageView)findViewById(R.id.userphoto));
+                                    ((TextView)findViewById(R.id.email)).setText(filterEmail(userEmail));
+
+                                    firebase.child("userlist").child(filterEmail(userEmail)).setValue(photo.toString());
+
                                     initializeFriendlist();
                                     updateUI(true);
                                 }
@@ -284,32 +300,17 @@ public class PlayActivity
         updateUI(false);
     }
 
-    public void toTestActivity(View v){
-
-        firebase.child("user").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot snapshot) {
-                if (snapshot.hasChild("name")) {
-                    Log.d("fk","Yes");
-                }else{
-                    Log.d("fk","No");
-                }
-            }
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                System.out.println("The read failed: " + databaseError.getCode());
-            }
-        });
-
-    }
-
     private void initializeFriendlist(){
         firebase.child("user").child(filterEmail(userEmail)).child("Friends").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 friends = new ArrayList<String>();
+                debts = new ArrayList<String>();
+                photoUris = new ArrayList<String>();
                 for(DataSnapshot dsp : dataSnapshot.getChildren()){
                     friends.add(dsp.getKey());
+                    debts.add((String)dsp.child("debt").getValue());
+                    photoUris.add((String)dsp.child("photo").getValue());
                 }
             }
 
@@ -339,15 +340,43 @@ public class PlayActivity
         });
     }
 
+    public void addFriend(final String friend){
+        firebase.child("userlist").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (snapshot.hasChild(filterEmail(friend))) {
+                    firebase.child("userlist").child(filterEmail(friend)).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            addFireFriend(friend,(String)dataSnapshot.getValue());
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            // ...
+                        }
+                    });
 
 
-    public void addFriend(View v){
-        String friend = ((EditText)findViewById(R.id.text1)).getText().toString();
-        //firebase.child("user/friends").setValue(friend);
-        String userEmailPath = filterEmail(userEmail);
-        firebase.child("user").child(userEmailPath).child("Friends").child(friend).setValue(friend);
-        firebase.child("userlist").getRef();
+                }else{
+                    Log.d("fk","No");
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                System.out.println("The read failed: " + databaseError.getCode());
+            }
+        });
     }
+
+    private void addFireFriend(String friend,String photo){
+        Friend f = new Friend(friend,"0",photo);
+        firebase.child("user").child(filterEmail(userEmail)).child("Friends").child(filterEmail(friend)).setValue(f);
+        Friend f2 = new Friend(filterEmail(userEmail),"0",photoUri);
+        firebase.child("user").child(filterEmail(friend)).child("Friends").child(filterEmail(userEmail)).setValue(f2);
+    }
+
+
 
     private String filterEmail(String Email){
         String path = "";
@@ -486,4 +515,11 @@ public class PlayActivity
 //            public void onChildMoved(DataSnapshot snapshot, String prevKey) {}
 //        };
 //    }
+    public void friendButton(View v){
+        Intent it = new Intent(PlayActivity.this,FriendActivity.class);
+        it.putStringArrayListExtra("Emails", new ArrayList<String>(friends));
+        it.putStringArrayListExtra("Debts", new ArrayList<String>(debts));
+        it.putStringArrayListExtra("Photos", new ArrayList<String>(photoUris));
+        startActivity(it);
+    }
 }
