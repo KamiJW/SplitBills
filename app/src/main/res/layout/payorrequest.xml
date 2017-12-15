@@ -69,6 +69,23 @@
 
 
     </LinearLayout>
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="270dp" >
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/payandrequestlist"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </RelativeLayout>
+
+    <Button
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:text="DONE"
+        android:id="@+id/finish_payandrequest"/>
     
 
 
