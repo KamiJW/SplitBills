@@ -17,7 +17,8 @@
         <item>Water</item>
         <item>Gas</item>
         <item>Electricity</item>
-        <item>other</item>
+        <item>Rent</item>
+        <item>Others</item>
     </string-array>
     <string-array name="p_r">
         <item>Pay</item>

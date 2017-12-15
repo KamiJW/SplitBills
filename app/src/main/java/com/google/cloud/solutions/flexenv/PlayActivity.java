@@ -27,6 +27,7 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -115,18 +116,18 @@ public class PlayActivity
     private DatabaseReference firebase;
     private FirebaseAuth auth;
     private FirebaseAuth.AuthStateListener authListener;
-    private String token;
+//    private String token;
     private String inbox;
     //private String currentChannel;
     //private List<String> channels;
     //private ChildEventListener channelListener;
-    private SimpleDateFormat fmt;
+//    private SimpleDateFormat fmt;
 
     //private Menu channelMenu;
     //private TextView channelLabel;
     //private ListView messageHistory;
-    private List<Map<String, String>> messages;
-    private SimpleAdapter messageAdapter;
+//    private List<Map<String, String>> messages;
+//    private SimpleAdapter messageAdapter;
     //private EditText messageText;
     //private TextView status;
 
@@ -136,8 +137,17 @@ public class PlayActivity
     private List<String> debts;
     private List<String> photoUris;
     private List<String> transactions;
+    private List<String> tPhotoUris;
     private String userEmail;
     private String photoUri;
+
+    private RecyclerView transView;
+    private TransactionAdapter tAdapter;
+
+    private String water;
+    private String gas;
+    private String electricity;
+    private String rent;
 
 
     @Override
@@ -203,14 +213,14 @@ public class PlayActivity
         signOutButton.setOnClickListener(this);
 
 
-        messages = new ArrayList<Map<String, String>>();
-        messageAdapter = new SimpleAdapter(this, messages, android.R.layout.simple_list_item_2,
-                new String[]{"message", "meta"}, new int[]{android.R.id.text1, android.R.id.text2});
+//        messages = new ArrayList<Map<String, String>>();
+//        messageAdapter = new SimpleAdapter(this, messages, android.R.layout.simple_list_item_2,
+//                new String[]{"message", "meta"}, new int[]{android.R.id.text1, android.R.id.text2});
         //messageHistory = (ListView) findViewById(R.id.messageHistory);
         //messageHistory.setAdapter(messageAdapter);
         //messageText = (EditText) findViewById(R.id.messageText);
         //messageText.setOnKeyListener(this);
-        fmt = new SimpleDateFormat("yy.MM.dd HH:mm z");
+//        fmt = new SimpleDateFormat("yy.MM.dd HH:mm z");
 
         //status = (TextView) findViewById(R.id.status);
 
@@ -261,10 +271,15 @@ public class PlayActivity
                                     photoUri = photo.toString();
                                     Picasso.with(PlayActivity.this).load(photo).into((ImageView)findViewById(R.id.userphoto));
                                     ((TextView)findViewById(R.id.email)).setText(filterEmail(userEmail));
+//                                    String a = ""+(Integer.valueOf("2")-3);
+//                                    ((TextView)findViewById(R.id.email)).setText(a);
 
                                     firebase.child("userlist").child(filterEmail(userEmail)).setValue(photo.toString());
 
                                     initializeFriendlist();
+                                    initializeUtilities();
+
+                                    initializeTransactions();
                                     updateUI(true);
                                 }
                             }
@@ -293,8 +308,6 @@ public class PlayActivity
                         }
                         fbLog.log(inbox, "Signed out");
                         firebase.onDisconnect();
-                        token = inbox = null;
-                        acct = null;
                     }
                 });
         updateUI(false);
@@ -323,14 +336,26 @@ public class PlayActivity
     }
 
     private void initializeTransactions(){
+
         firebase.child("user").child(filterEmail(userEmail)).child("Transactions").addValueEventListener(new ValueEventListener() {
+
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 transactions = new ArrayList<String>();
+                tPhotoUris = new ArrayList<String>();
                 for(DataSnapshot dsp : dataSnapshot.getChildren()){
-                    transactions.add(dsp.getKey());
+                    Map<String,String>data = (Map<String, String>) dsp.getValue();
+                    transactions.add(data.get("message"));
+                    tPhotoUris.add(data.get("uri"));
                 }
-
+                transView = (RecyclerView) findViewById(R.id.recent_transaction);
+                LinearLayoutManager lm = new LinearLayoutManager(PlayActivity.this);
+                lm.setOrientation(LinearLayoutManager.VERTICAL);
+                transView.setLayoutManager(lm);
+                tAdapter = new TransactionAdapter(transactions,tPhotoUris);
+                transView.setAdapter(tAdapter);
+                Log.d("here",""+transactions.size());
+                tAdapter.notifyDataSetChanged();
             }
 
             @Override
@@ -338,6 +363,136 @@ public class PlayActivity
                 System.out.println("The read failed: " + databaseError.getCode());
             }
         });
+    }
+
+    private void initializeUtilities(){
+        final DatabaseReference dr = firebase.child("user").child(filterEmail(userEmail));
+        dr.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (snapshot.hasChild("Utilities")) {
+
+                    dr.child("Utilities").addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            ArrayList<String> utilities = new ArrayList<String>();
+                            for(DataSnapshot dsp : dataSnapshot.getChildren()) {
+                                //utilities.set(i,(String)dsp.getValue());
+                                utilities.add((String)dsp.getValue());
+                            }
+                            electricity = utilities.get(0);
+                            gas = utilities.get(1);
+                            rent = utilities.get(2);
+                            water = utilities.get(3);
+//                            water = (String)dataSnapshot.getChildren().iterator().next().getValue();
+//                            gas = (String)dataSnapshot.getChildren().iterator().next().getValue();
+//                            electricity = (String)dataSnapshot.getChildren().iterator().next().getValue();
+//                            rent = (String)dataSnapshot.getChildren().iterator().next().getValue();
+
+                            ((TextView)findViewById(R.id.waterMoney)).setText(water);
+                            ((TextView)findViewById(R.id.gasMoney)).setText(gas);
+                            ((TextView)findViewById(R.id.electricMoney)).setText(electricity);
+                            ((TextView)findViewById(R.id.rentMoney)).setText(rent);
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+                }else{
+                    dr.child("Utilities").child("Water").setValue("0");
+                    dr.child("Utilities").child("Gas").setValue("0");
+                    dr.child("Utilities").child("Electric").setValue("0");
+                    dr.child("Utilities").child("Rent").setValue("0");
+
+                    water = "0";
+                    gas = "0";
+                    electricity = "0";
+                    rent = "0";
+
+                    ((TextView)findViewById(R.id.waterMoney)).setText(water);
+                    ((TextView)findViewById(R.id.gasMoney)).setText(gas);
+                    ((TextView)findViewById(R.id.electricMoney)).setText(electricity);
+                    ((TextView)findViewById(R.id.rentMoney)).setText(rent);
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                System.out.println("The read failed: " + databaseError.getCode());
+            }
+        });
+
+    }
+
+    public void addTransaction(ArrayList<String> friendlist,String type,String amount){
+        DatabaseReference dr = firebase.child("user").child(filterEmail(userEmail)).getRef();
+        DatabaseReference trans = firebase.child("user").child(filterEmail(userEmail)).child("Transactions").getRef();
+        Map<String,String> data = new HashMap<>();
+        Map<String,String> data2 = new HashMap<>();
+        if(type.equals("Pay")){
+            initializeUtilities();
+            if(friendlist.get(0).equals("Water")){
+                data.put("message"," has been paid " + amount +"$");
+                data.put("uri","Water");
+                trans.push().setValue(data);
+                dr.child("Utilities/Water").setValue(""+(Integer.valueOf(water) - Integer.valueOf(amount)));
+            }else if(friendlist.get(0).equals("Gas")){
+                data.put("message"," has been paid " + amount+"$");
+                data.put("uri","Gas");
+                trans.push().setValue(data);
+                dr.child("Utilities/Gas").setValue(""+(Integer.valueOf(gas) - Integer.valueOf(amount)));
+            }else if(friendlist.get(0).equals("Electricity")){
+                data.put("message"," has been paid " +amount+"$");
+                data.put("uri","Electricity");
+                trans.push().setValue(data);
+                dr.child("Utilities/Electric").setValue(""+(Integer.valueOf(electricity) - Integer.valueOf(amount)));
+            }else if(friendlist.get(0).equals("Rent")){
+                data.put("message"," has been paid " + amount+"$");
+                data.put("uri","Rent");
+                trans.push().setValue(data);
+                dr.child("Utilities/Rent").setValue(""+(Integer.valueOf(rent) - Integer.valueOf(amount)));
+            }else{
+                for(String s : friendlist){
+                    int index = friends.indexOf(s);
+                    debts.set(index,""+(Integer.valueOf(debts.get(index))-Integer.valueOf(amount)));
+                    dr.child("Friends").child(filterEmail(s)).child("debt").setValue(debts.get(index));
+                    data.put("message"," has been paid " + amount+"$");
+                    String uri = photoUris.get(index);
+                    data.put("uri",uri);
+                    trans.push().setValue(data);
+
+                    firebase.child("user").child(s).child("Friends").child(filterEmail(userEmail)).child("debt").setValue(""+(0-Integer.valueOf(debts.get(index))));
+                    data2.put("message"," has paid " +amount+"$");
+                    data2.put("uri",photoUri);
+                    firebase.child("user").child(s).child("Transactions").push().setValue(data2);
+                }
+            }
+        }else{
+            //type == Request
+            for(String s : friendlist) {
+                int index = friends.indexOf(s);
+                if (index == -1) {
+                    return;
+                }
+                debts.set(index, "" + (Integer.valueOf(debts.get(index)) - Integer.valueOf(amount)));
+                dr.child("Friends").child(filterEmail(s)).child("debt").setValue(debts.get(index));
+                data.put("message"," has been request "+amount+"$");
+                String uri = photoUris.get(index);
+                data.put("uri",uri);
+                trans.push().setValue(data);
+
+                firebase.child("user").child(s).child("Friends").child(filterEmail(userEmail)).child("debt").setValue("" + (Integer.valueOf(debts.get(index))));
+                data2.put("message"," has been asked for " + amount+"$");
+                data2.put("uri",photoUri);
+                firebase.child("user").child(s).child("Transactions").push().setValue(data2);
+            }
+        }
+
+    }
+
+    public String addDtot(String s){
+        return s.substring(0,s.length()-3) + ".com";
     }
 
     public void addFriend(final String friend){
@@ -359,7 +514,7 @@ public class PlayActivity
 
 
                 }else{
-                    Log.d("fk","No");
+                    //does not have child
                 }
             }
             @Override
@@ -386,10 +541,6 @@ public class PlayActivity
             }
         }
         return path;
-    }
-
-    private void getTransaction(){
-
     }
 
     private void updateUI(boolean signedIn) {
@@ -447,74 +598,6 @@ public class PlayActivity
         firebase = FirebaseDatabase.getInstance().getReference();
     }
 
-
-
-// [START requestLogger]
-    /*
-     * Request that a Servlet instance be assigned.
-     */
-//    private void requestLogger() {
-//        firebase.child(IBX + "/" + inbox).removeValue();
-//        firebase.child(IBX + "/" + inbox).addValueEventListener(new ValueEventListener() {
-//            public void onDataChange(DataSnapshot snapshot) {
-//                if (snapshot.exists()) {
-//                    fbLog = new FirebaseLogger(firebase, IBX + "/" + snapshot.getValue().toString()
-//                            + "/logs");
-//                    firebase.child(IBX + "/" + inbox).removeEventListener(this);
-//                    fbLog.log(inbox, "Signed in");
-//
-//                    //sjw request friend list
-//                    //friends
-//                }
-//            }
-//
-//            public void onCancelled(DatabaseError error) {
-//                Log.e(TAG, error.getDetails());
-//            }
-//        });
-//
-//        firebase.child(REQLOG).push().setValue(inbox);
-//    }
-// [END requestLogger]
-
-    /*
-     * Initialize pre-defined channels as Activity menu.
-     * Once a channel is selected, ChildEventListener is attached and
-     * waits for messages.
-     */
-//    private void initChannels(String channelString) {
-//        Log.d(TAG, "Channels : " + channelString);
-//        channels = new ArrayList<String>();
-//        String[] topicArr = channelString.split(",");
-//        for (int i = 0; i < topicArr.length; i++) {
-//            channels.add(i, topicArr[i]);
-//            channelMenu.add(topicArr[i]);
-//        }
-//
-//        channelListener = new ChildEventListener() {
-//            @Override
-//            public void onChildAdded(DataSnapshot snapshot, String prevKey) {
-//                Message message = (Message) snapshot.getValue(Message.class);
-//                // Extract attributes from Message object to display on the screen.
-//                addMessage(message.getText(), fmt.format(new Date(message.getTimeLong())) + " "
-//                        + message.getDisplayName());
-//            }
-//
-//            @Override
-//            public void onCancelled(DatabaseError error) {
-//                Log.e(TAG, error.getDetails());
-//            }
-//
-//            @Override
-//            public void onChildChanged(DataSnapshot snapshot, String prevKey) {}
-//
-//            @Override
-//            public void onChildRemoved(DataSnapshot snapshot) {}
-//
-//            @Override
-//            public void onChildMoved(DataSnapshot snapshot, String prevKey) {}
-//        };
-//    }
     public void friendButton(View v){
         Intent it = new Intent(PlayActivity.this,FriendActivity.class);
         it.putStringArrayListExtra("Emails", new ArrayList<String>(friends));
@@ -522,4 +605,103 @@ public class PlayActivity
         it.putStringArrayListExtra("Photos", new ArrayList<String>(photoUris));
         startActivity(it);
     }
+
+    public void payButton(View v){
+        Intent it = new Intent(PlayActivity.this,PayActivity.class);
+        it.putStringArrayListExtra("Emails", new ArrayList<String>(friends));
+        it.putStringArrayListExtra("Debts", new ArrayList<String>(debts));
+        it.putStringArrayListExtra("Photos", new ArrayList<String>(photoUris));
+        startActivity(it);
+    }
+
+    public void setButton(View v){
+        water = ((TextView)findViewById(R.id.waterMoney)).getText().toString();
+        gas = ((TextView)findViewById(R.id.gasMoney)).getText().toString();
+        electricity = ((TextView)findViewById(R.id.electricMoney)).getText().toString();
+        rent = ((TextView)findViewById(R.id.rentMoney)).getText().toString();
+
+        firebase.child("user").child(filterEmail(userEmail)).child("Utilities/Water").setValue(water);
+        firebase.child("user").child(filterEmail(userEmail)).child("Utilities/Gas").setValue(gas);
+        firebase.child("user").child(filterEmail(userEmail)).child("Utilities/Electric").setValue(electricity);
+        firebase.child("user").child(filterEmail(userEmail)).child("Utilities/Rent").setValue(rent);
+    }
+
+    private class TransactionAdapter extends RecyclerView.Adapter<TransactionHolder> {
+
+        private List<String> messages;
+        private List<String> photos;
+
+        public TransactionAdapter(List<String> mmessages, List<String> photolist){
+            messages = mmessages;
+            photos = photolist;
+            if(messages == null){
+                messages = new ArrayList<String>();
+            }
+            if(photos == null){
+                photos = new ArrayList<String>();
+            }
+        }
+
+        @Override
+        public TransactionHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
+            return new TransactionHolder(layoutInflater, parent);
+        }
+
+        @Override
+        public void onBindViewHolder(TransactionHolder holder, int position) {
+            String message = messages.get(position);
+            String photo = photos.get(position);
+            holder.bind(message, photo);
+        }
+
+        @Override
+        public int getItemCount() {
+            return messages.size();
+        }
+
+        public void deleteItem(int pos){
+            messages.remove(pos);
+            photos.remove(pos);
+            this.notifyItemRemoved(pos);
+        }
+    }
+
+    class TransactionHolder extends RecyclerView.ViewHolder{
+
+        private Uri photouri;
+        private String message;
+
+        private ImageView photoView;
+        private TextView messageView;
+
+        public TransactionHolder(LayoutInflater inflater, ViewGroup parent) {
+            super(inflater.inflate(R.layout.transaction_item, parent, false));
+            //itemView.setOnClickListener(this);
+            photoView = (ImageView) itemView.findViewById(R.id.transaction_photo);
+            messageView = (TextView) itemView.findViewById(R.id.pay_or_receive);
+        }
+
+        public void bind(String mmessage, String image) {
+            message = mmessage;
+            if(image.equals("Water")) {
+                photoView.setImageDrawable(getDrawable(R.drawable.water));
+            }else if(image.equals("Gas")){
+                photoView.setImageDrawable(getDrawable(R.drawable.gas));
+            } else if(image.equals("Electricity")){
+                photoView.setImageDrawable(getDrawable(R.drawable.elec));
+            }else if(image.equals("Rent")){
+                photoView.setImageDrawable(getDrawable(R.drawable.rent));
+            }else {
+                photouri = Uri.parse(image);
+                if(image != null) {
+                    Picasso.with(PlayActivity.this).load(photouri).into(photoView);
+                }
+            }
+
+            messageView.setText(message);
+        }
+    }
+
+
 }
