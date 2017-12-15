@@ -27,6 +27,7 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -56,6 +57,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.cloud.solutions.flexenv.common.Friend;
 import com.google.cloud.solutions.flexenv.common.Message;
+import com.google.cloud.solutions.flexenv.common.Transaction;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
@@ -125,19 +127,25 @@ public class PlayActivity
     //private Menu channelMenu;
     //private TextView channelLabel;
     //private ListView messageHistory;
-    private List<Map<String, String>> messages;
-    private SimpleAdapter messageAdapter;
+//    private List<Map<String, String>> messages;
+//    private SimpleAdapter messageAdapter;
     //private EditText messageText;
     //private TextView status;
 
     //private Account acc;
-    private String cuser;
+//    private String cuser;
     private List<String> friends;
     private List<String> debts;
     private List<String> photoUris;
     private List<String> transactions;
     private String userEmail;
     private String photoUri;
+
+    private RecyclerView transView;
+    private TransactionAdapter tAdapter;
+
+    private List<String> tPhotoUris;
+    private List<String> tmessages;
 
 
     @Override
@@ -203,9 +211,9 @@ public class PlayActivity
         signOutButton.setOnClickListener(this);
 
 
-        messages = new ArrayList<Map<String, String>>();
-        messageAdapter = new SimpleAdapter(this, messages, android.R.layout.simple_list_item_2,
-                new String[]{"message", "meta"}, new int[]{android.R.id.text1, android.R.id.text2});
+//        messages = new ArrayList<Map<String, String>>();
+//        messageAdapter = new SimpleAdapter(this, messages, android.R.layout.simple_list_item_2,
+//                new String[]{"message", "meta"}, new int[]{android.R.id.text1, android.R.id.text2});
         //messageHistory = (ListView) findViewById(R.id.messageHistory);
         //messageHistory.setAdapter(messageAdapter);
         //messageText = (EditText) findViewById(R.id.messageText);
@@ -216,6 +224,23 @@ public class PlayActivity
 
         updateUI(false);
         initFirebase();
+
+        firebase.child("user").child(filterEmail(userEmail)).child("transaction").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                transactions = new ArrayList<String>();
+                tPhotoUris = new ArrayList<String>();
+                for(DataSnapshot dsp : dataSnapshot.getChildren()){
+                    transactions.add((String)dsp.child("message").getValue());
+                    tPhotoUris.add((String)dsp.child("photo").getValue());
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                System.out.println("The read failed: " + databaseError.getCode());
+            }
+        });
     }
 
     @Override
@@ -266,6 +291,14 @@ public class PlayActivity
 
                                     initializeFriendlist();
                                     updateUI(true);
+
+                                    transView = (RecyclerView) findViewById(R.id.friend_list);
+                                    LinearLayoutManager lm = new LinearLayoutManager(PlayActivity.this);
+                                    lm.setOrientation(LinearLayoutManager.VERTICAL);
+                                    transView.setLayoutManager(lm);
+                                    tAdapter = new TransactionAdapter(tmessages,tPhotoUris);
+                                    transView.setAdapter(tAdapter);
+
                                 }
                             }
                         });
@@ -522,4 +555,65 @@ public class PlayActivity
         it.putStringArrayListExtra("Photos", new ArrayList<String>(photoUris));
         startActivity(it);
     }
+
+    private class TransactionAdapter extends RecyclerView.Adapter<TransactionHolder> {
+
+        private List<String> messages;
+        private List<String> photos;
+
+        public TransactionAdapter(List<String> messageslist, List<String> photolist){
+            messages = messageslist;
+            photos = photolist;
+        }
+
+        @Override
+        public TransactionHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
+            return new TransactionHolder(layoutInflater, parent);
+        }
+
+        @Override
+        public void onBindViewHolder(TransactionHolder holder, int position) {
+            String message = messages.get(position);
+            Uri photo = Uri.parse(photos.get(position));
+            holder.bind(message, photo);
+        }
+
+        @Override
+        public int getItemCount() {
+            return messages.size();
+        }
+
+        public void deleteItem(int pos){
+            messages.remove(pos);
+            photos.remove(pos);
+            this.notifyItemRemoved(pos);
+        }
+    }
+
+    class TransactionHolder extends RecyclerView.ViewHolder{
+
+        private Uri photouri;
+        private String message;
+
+
+        private ImageView photoView;
+        private TextView messageView;
+
+        public TransactionHolder(LayoutInflater inflater, ViewGroup parent) {
+            super(inflater.inflate(R.layout.friend_item, parent, false));
+            photoView = (ImageView) itemView.findViewById(R.id.transaction_photo);
+            messageView = (TextView) itemView.findViewById(R.id.pay_or_receive);
+        }
+
+        public void bind(String mmessage, Uri image) {
+            message = mmessage;
+            photouri = image;
+            if(image != null) {
+                Picasso.with(PlayActivity.this).load(photouri).into(photoView);
+            }
+            messageView.setText(message);
+        }
+    }
+
 }
