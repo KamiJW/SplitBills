@@ -120,7 +120,7 @@ public class PlayActivity
     private List<Map<String, String>> messages;
     private SimpleAdapter messageAdapter;
     //private EditText messageText;
-    private TextView status;
+    //private TextView status;
 
     //private Account acc;
     private String cuser;
@@ -201,7 +201,7 @@ public class PlayActivity
         //messageText.setOnKeyListener(this);
         fmt = new SimpleDateFormat("yy.MM.dd HH:mm z");
 
-        status = (TextView) findViewById(R.id.status);
+        //status = (TextView) findViewById(R.id.status);
 
         updateUI(false);
         initFirebase();
@@ -231,7 +231,7 @@ public class PlayActivity
             // If Google ID authentication is succeeded, obtain a token for Firebase authentication.
             if (result.isSuccess()) {
                 acct = result.getSignInAccount();
-                status.setText("Authenticating with Firebase...");
+                //status.setText("Authenticating with Firebase...");
                 AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
                 auth.signInWithCredential(credential)
                         .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
@@ -240,16 +240,14 @@ public class PlayActivity
                                 Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
                                 if (!task.isSuccessful()) {
                                     Log.w(TAG, "signInWithCredential", task.getException());
-                                    status.setText("Firebase authentication failed : " + task.getException());
+                                    //status.setText("Firebase authentication failed : " + task.getException());
                                 }
                                 else {
                                     firebase = FirebaseDatabase.getInstance().getReference();
                                     String email = auth.getCurrentUser().getEmail();
                                     userEmail = email;
                                     Uri photo = auth.getCurrentUser().getPhotoUrl();
-                                    ((TextView)findViewById(R.id.channelLabel)).setText(email);
-                                    Picasso.with(PlayActivity.this).load(photo).into((ImageView)findViewById(R.id.photo));
-                                    //requestLogger();
+                                    Picasso.with(PlayActivity.this).load(photo).into((ImageView)findViewById(R.id.userphoto));
                                     initializeFriendlist();
                                     updateUI(true);
                                 }
@@ -313,9 +311,6 @@ public class PlayActivity
                 for(DataSnapshot dsp : dataSnapshot.getChildren()){
                     friends.add(dsp.getKey());
                 }
-                String display = friends.toString();
-                ((TextView)findViewById(R.id.text2)).setText(display);
-
             }
 
             @Override
@@ -330,11 +325,8 @@ public class PlayActivity
         firebase.child("user").child(filterEmail(userEmail)).child("Transactions").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                //Post post = dataSnapshot.getValue(Post.class);
-                //((TextView)findViewById(R.id.text2)).setText(dataSnapshot.getChildrenCount()+"");
                 transactions = new ArrayList<String>();
                 for(DataSnapshot dsp : dataSnapshot.getChildren()){
-                    //ke neng yao list
                     transactions.add(dsp.getKey());
                 }
 
@@ -371,43 +363,16 @@ public class PlayActivity
 
     }
 
-
-//    @Override
-//    public boolean onKey(View v, int keyCode, KeyEvent event) {
-//        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-//            firebase.child(CHS + "/" + currentChannel)
-//                    .push()
-//                    .setValue(new Message(messageText.getText().toString(), acct.getDisplayName()));
-//            return true;
-//        }
-//        return false;
-//    }
-
-//    private void addMessage(String msgString, String meta) {
-//        Map<String, String> message = new HashMap<String, String>();
-//        message.put("message", msgString);
-//        message.put("meta", meta);
-//        messages.add(message);
-//
-//        messageAdapter.notifyDataSetChanged();
-//        messageText.setText("");
-//    }
-
     private void updateUI(boolean signedIn) {
         if (signedIn) {
             findViewById(R.id.sign_in_button).setVisibility(View.GONE);
+            findViewById(R.id.sign_in_block).setVisibility(View.GONE);
             findViewById(R.id.sign_out_button).setVisibility(View.VISIBLE);
-            //findViewById(R.id.channelLabel).setVisibility(View.VISIBLE);
-            //findViewById(R.id.messageText).setVisibility(View.VISIBLE);
-            //findViewById(R.id.messageHistory).setVisibility(View.VISIBLE);
         }
         else {
             findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
+            findViewById(R.id.sign_in_block).setVisibility(View.VISIBLE);
             findViewById(R.id.sign_out_button).setVisibility(View.GONE);
-            //findViewById(R.id.channelLabel).setVisibility(View.INVISIBLE);
-            //findViewById(R.id.messageText).setVisibility(View.INVISIBLE);
-            //findViewById(R.id.messageHistory).setVisibility(View.INVISIBLE);
-            ((TextView)findViewById(R.id.status)).setText("");
         }
     }
 
@@ -452,6 +417,8 @@ public class PlayActivity
         //channels = new ArrayList<String>();
         firebase = FirebaseDatabase.getInstance().getReference();
     }
+
+
 
 // [START requestLogger]
     /*

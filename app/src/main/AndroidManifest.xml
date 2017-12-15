@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.cloud.solutions.flexenv" >
+    package="com.google.cloud.solutions.flexenv">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -9,11 +9,11 @@
         android:icon="@mipmap/ic_launcher"
         android:label="SplitBill"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme">
         <activity
             android:name=".PlayActivity"
             android:label="SplitBill"
-            android:theme="@style/AppTheme.NoActionBar" >
+            android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -27,6 +27,8 @@
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
+
+        <activity android:name=".FriendActivity"></activity>
     </application>
 
 </manifest>
