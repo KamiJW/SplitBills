@@ -522,10 +522,4 @@ public class PlayActivity
         it.putStringArrayListExtra("Photos", new ArrayList<String>(photoUris));
         startActivity(it);
     }
-
-
-
-
-
-
 }
